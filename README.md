@@ -1,2 +1,2 @@
-# sysfinance-python
+# sysfinance-python-DJANGO
 Sistema Financeiro controle de gastos
