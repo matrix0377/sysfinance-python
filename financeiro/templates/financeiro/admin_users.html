@@ -1,0 +1,58 @@
+{% extends 'financeiro/base.html' %}
+{% block content %}
+<div class="container mx-auto py-8">
+    <h1 class="text-2xl font-bold mb-6">Usuários Administrativos</h1>
+    <div class="bg-white rounded shadow p-6">
+        <p class="text-gray-700">Gerencie os usuários administrativos do SysFinance.</p>
+        <form method="post" class="mb-4 flex flex-wrap gap-4">
+            {% csrf_token %}
+            <div>
+                <label class="block text-gray-700">Usuário:</label>
+                <input type="text" name="username" class="border rounded px-2 py-1" required />
+            </div>
+            <div>
+                <label class="block text-gray-700">E-mail:</label>
+                <input type="email" name="email" class="border rounded px-2 py-1" required />
+            </div>
+            <div>
+                <label class="block text-gray-700">Senha:</label>
+                <input type="password" name="password" class="border rounded px-2 py-1" required />
+            </div>
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Adicionar Usuário</button>
+        </form>
+        {% if success %}
+        <div class="mt-4 text-green-700">{{ success }}</div>
+        {% endif %}
+        {% if error %}
+        <div class="mt-4 text-red-600">{{ error }}</div>
+        {% endif %}
+        <h2 class="text-xl font-semibold mt-8 mb-2">Lista de Usuários</h2>
+        <table class="min-w-full text-sm">
+            <thead>
+                <tr class="bg-gray-100">
+                    <th class="py-2 px-4">Usuário</th>
+                    <th class="py-2 px-4">E-mail</th>
+                    <th class="py-2 px-4">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td class="py-2 px-4">{{ user.username }}</td>
+                    <td class="py-2 px-4">{{ user.email }}</td>
+                    <td class="py-2 px-4">
+                        <form method="post" style="display:inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="delete_user" value="{{ user.id }}" />
+                            <button type="submit" class="text-red-600 hover:underline">Excluir</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="3" class="text-center py-4">Nenhum usuário encontrado.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

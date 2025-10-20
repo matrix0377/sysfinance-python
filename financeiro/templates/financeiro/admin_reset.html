@@ -1,0 +1,19 @@
+{% extends 'financeiro/base.html' %}
+{% block content %}
+<div class="container mx-auto py-8">
+    <h1 class="text-2xl font-bold mb-6">Reset Administrativo</h1>
+    <div class="bg-white rounded shadow p-6">
+        <p class="text-gray-700">Área de reset administrativo do SysFinance. Use com cautela!</p>
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Resetar Sistema</button>
+        </form>
+        {% if success %}
+        <div class="mt-4 text-green-700">{{ success }}</div>
+        {% endif %}
+        {% if error %}
+        <div class="mt-4 text-red-600">{{ error }}</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

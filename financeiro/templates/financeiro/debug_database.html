@@ -1,0 +1,40 @@
+{% extends 'financeiro/base.html' %}
+{% block content %}
+<div class="container mx-auto py-8">
+    <h1 class="text-2xl font-bold mb-6">Debug Database</h1>
+    <div class="bg-white rounded shadow p-6">
+        <p class="text-gray-700">Ferramenta de debug do banco de dados. Use apenas para diagnóstico avançado.</p>
+        <form method="post" class="mb-4 flex flex-wrap gap-4">
+            {% csrf_token %}
+            <div>
+                <label class="block text-gray-700">Comando SQL:</label>
+                <input type="text" name="sql" class="border rounded px-2 py-1 w-96" placeholder="Ex: SELECT * FROM financeiro_conta;" required />
+            </div>
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Executar</button>
+        </form>
+        {% if error %}
+        <div class="mt-4 text-red-600">{{ error }}</div>
+        {% endif %}
+        {% if columns and rows %}
+        <div class="overflow-x-auto mt-6">
+            <table class="min-w-full text-sm">
+                <thead>
+                    <tr class="bg-gray-100">
+                        {% for col in columns %}<th class="py-2 px-4">{{ col }}</th>{% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                    <tr>
+                        {% for cell in row %}<td class="py-2 px-4">{{ cell }}</td>{% endfor %}
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="{{ columns|length }}" class="text-center py-4">Nenhum resultado.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

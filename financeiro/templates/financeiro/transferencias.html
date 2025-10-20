@@ -1,0 +1,61 @@
+{% extends 'financeiro/base.html' %}
+{% block content %}
+<div class="container mx-auto py-8">
+    <h1 class="text-2xl font-bold mb-6">Transferências</h1>
+    <div class="bg-white rounded shadow p-6">
+        <form method="post" class="mb-4 flex flex-wrap gap-4">
+            {% csrf_token %}
+            <div>
+                <label class="block text-gray-700">Conta de origem:</label>
+                <select name="conta_origem" class="border rounded px-2 py-1">
+                    {% for conta in contas %}
+                    <option value="{{ conta.id }}">{{ conta.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-gray-700">Conta de destino:</label>
+                <select name="conta_destino" class="border rounded px-2 py-1">
+                    {% for conta in contas %}
+                    <option value="{{ conta.id }}">{{ conta.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-gray-700">Valor:</label>
+                <input type="number" step="0.01" name="valor" class="border rounded px-2 py-1" required />
+            </div>
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Transferir</button>
+        </form>
+        {% if success %}
+        <div class="mt-4 text-green-700">{{ success }}</div>
+        {% endif %}
+        {% if error %}
+        <div class="mt-4 text-red-600">{{ error }}</div>
+        {% endif %}
+        <h2 class="text-xl font-semibold mt-8 mb-2">Histórico de Transferências</h2>
+        <table class="min-w-full text-sm">
+            <thead>
+                <tr class="bg-gray-100">
+                    <th class="py-2 px-4">Data</th>
+                    <th class="py-2 px-4">Origem</th>
+                    <th class="py-2 px-4">Destino</th>
+                    <th class="py-2 px-4">Valor</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in transferencias %}
+                <tr>
+                    <td class="py-2 px-4">{{ t.data|date:'d/m/Y' }}</td>
+                    <td class="py-2 px-4">{{ t.conta_origem.nome }}</td>
+                    <td class="py-2 px-4">{{ t.conta_destino.nome }}</td>
+                    <td class="py-2 px-4">R$ {{ t.valor|floatformat:2 }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" class="text-center py-4">Nenhuma transferência encontrada.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -2,39 +2,43 @@ version: '3.9'
 
 services:
   db:
-    image: postgres:17
+    image: postgres:15
+    container_name: sysfinance-db
     restart: always
     environment:
-      POSTGRES_DB: sysfinance_django
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: matrix@102550
+      POSTGRES_DB: sysfinance
+      POSTGRES_USER: sysfinance
+      POSTGRES_PASSWORD: sysfinance123
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U sysfinance"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   web:
     build: .
-    command: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8010"
+    container_name: sysfinance-web
+    command: >
+      sh -c "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn sysfinance.wsgi:application --bind 0.0.0.0:8000"
     volumes:
       - .:/code
     ports:
-      - "8010:8010"
+      - "8000:8000"
     depends_on:
       db:
         condition: service_healthy
     environment:
-      DEBUG: 1
-      DJANGO_DB_HOST: db
-      DJANGO_DB_PORT: 5432
-      DJANGO_DB_NAME: sysfinance_django
-      DJANGO_DB_USER: postgres
-      DJANGO_DB_PASSWORD: matrix@102550
+      - DEBUG=1
+      - DJANGO_ALLOWED_HOSTS=*
+      - DJANGO_DB_HOST=db
+      - DJANGO_DB_NAME=sysfinance
+      - DJANGO_DB_USER=sysfinance
+      - DJANGO_DB_PASSWORD=sysfinance123
+      - DJANGO_SECRET_KEY=changeme-please
 
 volumes:
-  pgdata:
+  postgres_data:

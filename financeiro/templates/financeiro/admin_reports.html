@@ -1,0 +1,41 @@
+{% extends 'financeiro/base.html' %}
+{% block content %}
+<div class="container mx-auto py-8">
+    <h1 class="text-2xl font-bold mb-6">Relatórios Administrativos</h1>
+    <div class="bg-white rounded shadow p-6">
+        <p class="text-gray-700">Área de relatórios administrativos do SysFinance.</p>
+        <!-- Adicione aqui filtros, tabelas e gráficos conforme admin_reports.php -->
+        <form method="get" class="mb-4 flex flex-wrap gap-4">
+            <div>
+                <label class="block text-gray-700">Período:</label>
+                <input type="date" name="inicio" value="{{ request.GET.inicio }}" class="border rounded px-2 py-1" />
+                <span class="mx-1">a</span>
+                <input type="date" name="fim" value="{{ request.GET.fim }}" class="border rounded px-2 py-1" />
+            </div>
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Filtrar</button>
+        </form>
+        <table class="min-w-full text-sm">
+            <thead>
+                <tr class="bg-gray-100">
+                    <th class="py-2 px-4">Data</th>
+                    <th class="py-2 px-4">Usuário</th>
+                    <th class="py-2 px-4">Ação</th>
+                    <th class="py-2 px-4">Detalhes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td class="py-2 px-4">{{ log.data|date:'d/m/Y H:i' }}</td>
+                    <td class="py-2 px-4">{{ log.usuario.username }}</td>
+                    <td class="py-2 px-4">{{ log.acao }}</td>
+                    <td class="py-2 px-4">{{ log.detalhes }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" class="text-center py-4">Nenhum registro encontrado.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

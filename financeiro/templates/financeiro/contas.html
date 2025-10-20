@@ -1,49 +1,105 @@
-{% include 'financeiro/base.html' %}
-{% block content %}
-<div class="container mx-auto mt-8">
-    <h1 class="text-2xl font-bold mb-4">Contas</h1>
-    <form method="post" class="mb-6 bg-white p-4 rounded shadow">
-        {% csrf_token %}
-        <div class="mb-2">
-            <label class="block mb-1">Nome da Conta</label>
-            <input type="text" name="nome" class="w-full border rounded px-3 py-2" required>
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contas - SysFinanças</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-white min-h-screen">
+    <header class="bg-slate-800 shadow-lg p-4">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-white">💰 SysFinanças</h1>
+            <div class="flex items-center space-x-4">
+                <a href="{% url 'dashboard' %}" class="text-blue-400 hover:text-blue-300">Dashboard</a>
+                <span class="text-gray-300">Olá, {{ request.user.username }}</span>
+                <a href="{% url 'logout' %}" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-sm">Sair</a>
+            </div>
         </div>
-        <div class="mb-2">
-            <label class="block mb-1">Tipo</label>
-            <select name="tipo" class="w-full border rounded px-3 py-2" required>
-                <option value="corrente">Corrente</option>
-                <option value="poupanca">Poupança</option>
-                <option value="investimento">Investimento</option>
-            </select>
+    </header>
+
+    <div class="max-w-7xl mx-auto p-6">
+        <!-- Mensagens -->
+        {% if success %}
+        <div class="bg-green-600 text-white p-4 rounded-lg mb-6">
+            ✅ {{ success }}
         </div>
-        <div class="mb-4">
-            <label class="block mb-1">Saldo Inicial</label>
-            <input type="number" step="0.01" name="saldo_inicial" class="w-full border rounded px-3 py-2" value="0">
-        </div>
-        <button type="submit" class="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">Cadastrar Conta</button>
-    </form>
-    <h2 class="text-xl font-semibold mb-2">Minhas Contas</h2>
-    <table class="w-full bg-white rounded shadow">
-        <thead>
-            <tr class="bg-gray-100">
-                <th class="p-2 text-left">Nome</th>
-                <th class="p-2 text-left">Tipo</th>
-                <th class="p-2 text-left">Saldo Inicial</th>
-                <th class="p-2 text-left">Criado em</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for conta in contas %}
-            <tr>
-                <td class="p-2">{{ conta.nome }}</td>
-                <td class="p-2">{{ conta.get_tipo_display }}</td>
-                <td class="p-2">R$ {{ conta.saldo_inicial }}</td>
-                <td class="p-2">{{ conta.criado_em|date:'d/m/Y H:i' }}</td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="4" class="p-2 text-center text-gray-500">Nenhuma conta cadastrada.</td></tr>
+        {% endif %}
+        {% if errors %}
+        <div class="bg-red-600 text-white p-4 rounded-lg mb-6">
+            {% for error in errors %}
+            <p>❌ {{ error }}</p>
             {% endfor %}
-        </tbody>
-    </table>
-</div>
-{% endblock %}
+        </div>
+        {% endif %}
+
+        <!-- Resumo -->
+        <div class="bg-slate-800 rounded-lg p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-2">Resumo das Contas</h2>
+            <p class="text-3xl font-bold text-blue-400">R$ {{ total_saldo|floatformat:2 }}</p>
+            <p class="text-gray-400">Total em {{ contas|length }} conta(s)</p>
+        </div>
+
+        <div class="grid lg:grid-cols-3 gap-6">
+            <!-- Formulário -->
+            <div class="bg-slate-800 rounded-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">Nova Conta</h2>
+                <form method="POST" class="space-y-4">
+                    {% csrf_token %}
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Nome da Conta</label>
+                        <input type="text" name="nome" required class="w-full p-2 bg-slate-700 rounded-lg" placeholder="Ex: Conta Corrente">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Tipo</label>
+                        <select name="tipo" required class="w-full p-2 bg-slate-700 rounded-lg">
+                            <option value="corrente">🏦 Conta Corrente</option>
+                            <option value="poupanca">🐷 Conta Poupança</option>
+                            <option value="investimento">📈 Investimento</option>
+                            <option value="carteira">💳 Carteira</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Saldo Inicial</label>
+                        <input type="number" name="saldo_inicial" step="0.01" value="0" required class="w-full p-2 bg-slate-700 rounded-lg">
+                    </div>
+                    <button type="submit" name="add_conta" class="w-full bg-blue-600 hover:bg-blue-700 py-2 rounded-lg font-medium">
+                        Criar Conta
+                    </button>
+                </form>
+            </div>
+
+            <!-- Lista de Contas -->
+            <div class="lg:col-span-2 bg-slate-800 rounded-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">Minhas Contas</h2>
+                <div class="grid gap-4">
+                    {% for conta in contas %}
+                    <div class="p-4 bg-slate-700 rounded-lg">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <h3 class="font-semibold text-lg">{{ conta.nome }}</h3>
+                                <p class="text-gray-400 capitalize flex items-center gap-1">
+                                    {% if conta.tipo == 'corrente' %}🏦 Conta Corrente{% elif conta.tipo == 'poupanca' %}🐷 Conta Poupança{% elif conta.tipo == 'investimento' %}📈 Investimento{% elif conta.tipo == 'carteira' %}💳 Carteira{% else %}💰 {{ conta.get_tipo_display }}{% endif %}
+                                </p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-2xl font-bold text-blue-400">
+                                    R$ {{ conta.saldo_inicial|floatformat:2 }}
+                                </p>
+                                <!-- Botões de editar/deletar podem ser implementados futuramente -->
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-8 text-gray-400">
+                        <p>Nenhuma conta cadastrada ainda.</p>
+                        <p>Crie sua primeira conta usando o formulário ao lado.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
