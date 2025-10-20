@@ -1,25 +1,233 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard - SysFinance</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SysFinanças - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'slate-750': '#1e293b',
+                    }
+                }
+            }
+        }
+    </script>
 </head>
-<body class="bg-gray-50">
-    <nav class="bg-blue-600 p-4 text-white flex justify-between">
-        <span class="font-bold">SysFinance</span>
-        <a href="/logout/" class="hover:underline">Sair</a>
-    </nav>
-    <div class="container mx-auto mt-8">
-        <h1 class="text-3xl font-bold mb-6">Dashboard</h1>
-        <ul class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <li><a href="/contas/" class="block bg-white p-4 rounded shadow hover:bg-blue-50">Contas</a></li>
-            <li><a href="/transacoes/" class="block bg-white p-4 rounded shadow hover:bg-blue-50">Transações</a></li>
-            <li><a href="/metas/" class="block bg-white p-4 rounded shadow hover:bg-blue-50">Metas</a></li>
-            <li><a href="/usuarios/" class="block bg-white p-4 rounded shadow hover:bg-blue-50">Usuários</a></li>
-            <li><a href="/relatorios/" class="block bg-white p-4 rounded shadow hover:bg-blue-50">Relatórios</a></li>
-            <li><a href="/logs/" class="block bg-white p-4 rounded shadow hover:bg-blue-50">Logs</a></li>
-        </ul>
+<body class="bg-slate-900 text-white min-h-screen">
+    <!-- Header -->
+    <header class="bg-slate-800 shadow-lg p-4">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-white">💰 SysFinanças</h1>
+            <div class="flex items-center space-x-4">
+                <span class="text-gray-300">Olá, {{ request.user.username }} ({{ request.user.get_role_display|default:'visitante' }})</span>
+                {% if request.user.is_superuser %}
+                <a href="{% url 'usuarios' %}" class="text-blue-400 hover:text-blue-300 text-sm">👥 Usuários</a>
+                <a href="#" class="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 px-4 py-2 rounded-lg text-sm font-medium shadow-lg">
+                    🔧 Dashboard Admin
+                </a>
+                {% endif %}
+                <a href="{% url 'logout' %}" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-sm">Sair</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto p-6">
+        <!-- Cards de Resumo -->
+        <div class="grid md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-slate-800 rounded-lg p-6">
+                <h3 class="text-gray-400 text-sm">Receitas (Mês)</h3>
+                <p class="text-2xl font-bold text-green-400">R$ {{ total_receitas|floatformat:2|default:'0,00' }}</p>
+            </div>
+            <div class="bg-slate-800 rounded-lg p-6">
+                <h3 class="text-gray-400 text-sm">Despesas (Mês)</h3>
+                <p class="text-2xl font-bold text-red-400">R$ {{ total_despesas|floatformat:2|default:'0,00' }}</p>
+            </div>
+            <div class="bg-slate-800 rounded-lg p-6">
+                <h3 class="text-gray-400 text-sm">Saldo em Contas</h3>
+                <p class="text-2xl font-bold text-blue-400">R$ {{ saldo_contas|floatformat:2|default:'0,00' }}</p>
+            </div>
+        </div>
+
+        <!-- Grid Principal -->
+        <div class="grid lg:grid-cols-2 gap-6">
+            <!-- Transações Recentes -->
+            <div class="bg-slate-800 rounded-lg p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold">Transações Recentes</h2>
+                    <a href="{% url 'transacoes' %}" class="text-blue-400 hover:text-blue-300 text-sm">Ver todas</a>
+                </div>
+                <div class="space-y-3">
+                    {% for transacao in transacoes_recentes %}
+                    <div class="flex justify-between items-center p-3 bg-slate-700 rounded-lg">
+                        <div>
+                            <p class="font-medium">{{ transacao.descricao }}</p>
+                            <p class="text-sm text-gray-400">{{ transacao.data|date:'d/m/Y' }}</p>
+                        </div>
+                        <span class="font-bold {% if transacao.tipo == 'receita' %}text-green-400{% else %}text-red-400{% endif %}">
+                            {% if transacao.tipo == 'receita' %}+{% else %}-{% endif %}R$ {{ transacao.valor|floatformat:2 }}
+                        </span>
+                    </div>
+                    {% empty %}
+                    <div class="text-center text-gray-400">Nenhuma transação recente</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Contas -->
+            <div class="bg-slate-800 rounded-lg p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold">Minhas Contas</h2>
+                    <a href="{% url 'contas' %}" class="text-blue-400 hover:text-blue-300 text-sm">⚙️ Gerenciar</a>
+                </div>
+                <div class="space-y-3">
+                    {% for conta in contas %}
+                    <div class="flex justify-between items-center p-3 bg-slate-700 rounded-lg">
+                        <div>
+                            <p class="font-medium">{{ conta.nome }}</p>
+                            <p class="text-sm text-gray-400">{{ conta.get_tipo_display }}</p>
+                        </div>
+                        <span class="font-bold {% if conta.saldo_inicial < 0 %}text-red-400{% else %}text-blue-400{% endif %}">
+                            R$ {{ conta.saldo_inicial|floatformat:2 }}
+                        </span>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-4 text-gray-400">
+                        <p class="mb-2">📝 Nenhuma conta cadastrada</p>
+                        <a href="{% url 'contas' %}" class="text-blue-400 hover:text-blue-300 text-sm">Criar primeira conta</a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Metas -->
+            <div class="bg-slate-800 rounded-lg p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold">Metas Financeiras</h2>
+                    <a href="{% url 'metas' %}" class="text-blue-400 hover:text-blue-300 text-sm">Ver todas</a>
+                </div>
+                <div class="space-y-4">
+                    {% for meta in metas %}
+                    <div class="p-3 bg-slate-700 rounded-lg">
+                        <div class="flex justify-between items-center mb-2">
+                            <p class="font-medium">{{ meta.nome }}</p>
+                            <span class="text-sm text-gray-400">{{ meta.progresso|floatformat:1 }}%</span>
+                        </div>
+                        <div class="w-full bg-slate-600 rounded-full h-2 mb-2">
+                            <div class="bg-green-500 h-2 rounded-full" style="width: {{ meta.progresso|floatformat:0 }}%"></div>
+                        </div>
+                        <div class="flex justify-between text-sm text-gray-400">
+                            <span>R$ {{ meta.valor_atual|floatformat:2 }}</span>
+                            <span>R$ {{ meta.valor|floatformat:2 }}</span>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center text-gray-400">Nenhuma meta cadastrada</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Menu de Ações -->
+            <div class="bg-slate-800 rounded-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">Ações Rápidas</h2>
+                <div class="grid grid-cols-2 gap-3">
+                    <a href="{% url 'transacoes' %}?tipo=receita" class="bg-green-600 hover:bg-green-700 text-center py-3 rounded-lg text-sm font-medium">
+                        💰 Receitas
+                    </a>
+                    <a href="{% url 'transacoes' %}?tipo=despesa" class="bg-red-600 hover:bg-red-700 text-center py-3 rounded-lg text-sm font-medium">
+                        💸 Despesas
+                    </a>
+                    <button onclick="openExtractModal()" class="bg-cyan-600 hover:bg-cyan-700 text-center py-3 rounded-lg text-sm font-medium">
+                        📄 Extratos
+                    </button>
+                    <a href="{% url 'relatorios' %}?filtro=ganhos" class="bg-blue-600 hover:bg-blue-700 text-center py-3 rounded-lg text-sm font-medium">
+                        📊 Ganhos do Mês
+                    </a>
+                    <a href="{% url 'relatorios' %}?filtro=despesas" class="bg-orange-600 hover:bg-orange-700 text-center py-3 rounded-lg text-sm font-medium">
+                        📈 Despesas do Mês
+                    </a>
+                    <a href="#" class="bg-indigo-600 hover:bg-indigo-700 text-center py-3 rounded-lg text-sm font-medium">
+                        🔄 Transferir
+                    </a>
+                    <a href="{% url 'logs' %}" class="bg-purple-600 hover:bg-purple-700 text-center py-3 rounded-lg text-sm font-medium">
+                        📋 Logs Sistema
+                    </a>
+                    <a href="{% url 'contas' %}" class="bg-teal-600 hover:bg-teal-700 text-center py-3 rounded-lg text-sm font-medium">
+                        🏦 Contas
+                    </a>
+                    <a href="{% url 'metas' %}" class="bg-pink-600 hover:bg-pink-700 text-center py-3 rounded-lg text-sm font-medium">
+                        🎯 Metas
+                    </a>
+                    <a href="#" class="bg-amber-600 hover:bg-amber-700 text-center py-3 rounded-lg text-sm font-medium">
+                        💾 Backup BD
+                    </a>
+                    {% if request.user.is_superuser %}
+                    <a href="{% url 'usuarios' %}" class="bg-gray-600 hover:bg-gray-700 text-center py-3 rounded-lg text-sm font-medium">
+                        👥 Usuários
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
     </div>
+
+    <!-- Modal de Extratos -->
+    <div id="extractModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-slate-800 rounded-lg p-6 w-full max-w-md">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-semibold">📄 Gerar Extrato</h3>
+                    <button onclick="closeExtractModal()" class="text-gray-400 hover:text-white">✕</button>
+                </div>
+                
+                <form action="#" method="GET" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Mês/Ano do Extrato</label>
+                        <input type="month" name="mes" required 
+                               value="{{ now|date:'Y-m' }}"
+                               class="w-full p-3 bg-slate-700 rounded-lg border border-slate-600 focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Tipo de Extrato</label>
+                        <select name="tipo" class="w-full p-3 bg-slate-700 rounded-lg border border-slate-600 focus:ring-2 focus:ring-blue-500">
+                            <option value="completo">📊 Completo (Receitas + Despesas)</option>
+                            <option value="receitas">💰 Apenas Receitas</option>
+                            <option value="despesas">💸 Apenas Despesas</option>
+                        </select>
+                    </div>
+                    
+                    <div class="flex gap-3">
+                        <button type="submit" class="flex-1 bg-cyan-600 hover:bg-cyan-700 py-3 rounded-lg font-medium">
+                            📄 Gerar Extrato
+                        </button>
+                        <button type="button" onclick="closeExtractModal()" class="flex-1 bg-gray-600 hover:bg-gray-700 py-3 rounded-lg font-medium">
+                            Cancelar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openExtractModal() {
+            document.getElementById('extractModal').classList.remove('hidden');
+        }
+        
+        function closeExtractModal() {
+            document.getElementById('extractModal').classList.add('hidden');
+        }
+        
+        // Fechar modal ao clicar fora
+        document.getElementById('extractModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeExtractModal();
+            }
+        });
+    </script>
 </body>
 </html>

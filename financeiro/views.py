@@ -18,9 +18,47 @@ def logout_view(request):
 	logout(request)
 	return redirect('login')
 
+from django.db.models import Sum
+
 @login_required
 def dashboard(request):
-	return render(request, 'financeiro/dashboard.html')
+	from .models import Conta, Transacao, Meta
+	# Totais de receitas/despesas do mês atual
+	from datetime import date
+	today = date.today()
+	transacoes = Transacao.objects.filter(usuario=request.user, data__year=today.year, data__month=today.month)
+	total_receitas = transacoes.filter(tipo='receita').aggregate(total=Sum('valor'))['total'] or 0
+	total_despesas = transacoes.filter(tipo='despesa').aggregate(total=Sum('valor'))['total'] or 0
+	# Saldo total das contas
+	contas = Conta.objects.filter(usuario=request.user)
+	saldo_contas = contas.aggregate(total=Sum('saldo_inicial'))['total'] or 0
+	# Transações recentes (últimas 5)
+	transacoes_recentes = Transacao.objects.filter(usuario=request.user).order_by('-criado_em', '-data')[:5]
+	# Metas com cálculo de progresso e valor atual
+	metas_objs = Meta.objects.filter(usuario=request.user)
+	metas = []
+	for meta in metas_objs:
+		valor_disponivel = float(saldo_contas)
+		valor_atual = float(meta.valor_atual) + (valor_disponivel * 0.1)
+		valor_atual = min(valor_atual, float(meta.valor))
+		progresso = (valor_atual / float(meta.valor)) * 100 if float(meta.valor) > 0 else 0
+		progresso = min(progresso, 100)
+		metas.append({
+			'nome': meta.nome,
+			'valor': float(meta.valor),
+			'valor_atual': valor_atual,
+			'progresso': progresso,
+		})
+	context = {
+		'total_receitas': total_receitas,
+		'total_despesas': total_despesas,
+		'saldo_contas': saldo_contas,
+		'transacoes_recentes': transacoes_recentes,
+		'contas': contas,
+		'metas': metas,
+		'now': today,
+	}
+	return render(request, 'financeiro/dashboard.html', context)
 
 @login_required
 def contas(request):

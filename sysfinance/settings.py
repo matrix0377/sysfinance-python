@@ -132,3 +132,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Usar model de usuário customizado
 AUTH_USER_MODEL = 'financeiro.Usuario'
+
+LOGIN_URL = '/login/'
