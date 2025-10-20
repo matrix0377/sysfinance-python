@@ -1,0 +1,49 @@
+{% include 'financeiro/base.html' %}
+{% block content %}
+<div class="container mx-auto mt-8">
+    <h1 class="text-2xl font-bold mb-4">Contas</h1>
+    <form method="post" class="mb-6 bg-white p-4 rounded shadow">
+        {% csrf_token %}
+        <div class="mb-2">
+            <label class="block mb-1">Nome da Conta</label>
+            <input type="text" name="nome" class="w-full border rounded px-3 py-2" required>
+        </div>
+        <div class="mb-2">
+            <label class="block mb-1">Tipo</label>
+            <select name="tipo" class="w-full border rounded px-3 py-2" required>
+                <option value="corrente">Corrente</option>
+                <option value="poupanca">Poupança</option>
+                <option value="investimento">Investimento</option>
+            </select>
+        </div>
+        <div class="mb-4">
+            <label class="block mb-1">Saldo Inicial</label>
+            <input type="number" step="0.01" name="saldo_inicial" class="w-full border rounded px-3 py-2" value="0">
+        </div>
+        <button type="submit" class="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">Cadastrar Conta</button>
+    </form>
+    <h2 class="text-xl font-semibold mb-2">Minhas Contas</h2>
+    <table class="w-full bg-white rounded shadow">
+        <thead>
+            <tr class="bg-gray-100">
+                <th class="p-2 text-left">Nome</th>
+                <th class="p-2 text-left">Tipo</th>
+                <th class="p-2 text-left">Saldo Inicial</th>
+                <th class="p-2 text-left">Criado em</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for conta in contas %}
+            <tr>
+                <td class="p-2">{{ conta.nome }}</td>
+                <td class="p-2">{{ conta.get_tipo_display }}</td>
+                <td class="p-2">R$ {{ conta.saldo_inicial }}</td>
+                <td class="p-2">{{ conta.criado_em|date:'d/m/Y H:i' }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="p-2 text-center text-gray-500">Nenhuma conta cadastrada.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

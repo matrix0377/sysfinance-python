@@ -1,0 +1,32 @@
+{% include 'financeiro/base.html' %}
+{% block content %}
+<div class="container mx-auto mt-8">
+    <h1 class="text-2xl font-bold mb-4">Relatórios Financeiros</h1>
+    <div class="bg-white p-4 rounded shadow mb-6">
+        <p><strong>Total de Receitas:</strong> R$ {{ total_receitas }}</p>
+        <p><strong>Total de Despesas:</strong> R$ {{ total_despesas }}</p>
+        <p><strong>Saldo Inicial Total:</strong> R$ {{ saldo_total }}</p>
+    </div>
+    <h2 class="text-xl font-semibold mb-2">Minhas Contas</h2>
+    <table class="w-full bg-white rounded shadow">
+        <thead>
+            <tr class="bg-gray-100">
+                <th class="p-2 text-left">Nome</th>
+                <th class="p-2 text-left">Tipo</th>
+                <th class="p-2 text-left">Saldo Inicial</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for conta in contas %}
+            <tr>
+                <td class="p-2">{{ conta.nome }}</td>
+                <td class="p-2">{{ conta.get_tipo_display }}</td>
+                <td class="p-2">R$ {{ conta.saldo_inicial }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3" class="p-2 text-center text-gray-500">Nenhuma conta cadastrada.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

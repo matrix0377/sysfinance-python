@@ -1,0 +1,40 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_DB: sysfinance_django
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: matrix@102550
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+  command: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8010"
+    volumes:
+      - .:/code
+    ports:
+      - "8010:8010"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DEBUG=1
+      - DJANGO_DB_HOST=db
+      - DJANGO_DB_PORT=5432
+      - DJANGO_DB_NAME=sysfinance_django
+      - DJANGO_DB_USER=postgres
+      - DJANGO_DB_PASSWORD=matrix@102550
+
+volumes:
+  pgdata:

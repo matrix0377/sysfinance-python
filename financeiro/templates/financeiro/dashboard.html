@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard - SysFinance</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50">
+    <nav class="bg-blue-600 p-4 text-white flex justify-between">
+        <span class="font-bold">SysFinance</span>
+        <a href="/logout/" class="hover:underline">Sair</a>
+    </nav>
+    <div class="container mx-auto mt-8">
+        <h1 class="text-3xl font-bold mb-6">Dashboard</h1>
+        <ul class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <li><a href="/contas/" class="block bg-white p-4 rounded shadow hover:bg-blue-50">Contas</a></li>
+            <li><a href="/transacoes/" class="block bg-white p-4 rounded shadow hover:bg-blue-50">Transações</a></li>
+            <li><a href="/metas/" class="block bg-white p-4 rounded shadow hover:bg-blue-50">Metas</a></li>
+            <li><a href="/usuarios/" class="block bg-white p-4 rounded shadow hover:bg-blue-50">Usuários</a></li>
+            <li><a href="/relatorios/" class="block bg-white p-4 rounded shadow hover:bg-blue-50">Relatórios</a></li>
+            <li><a href="/logs/" class="block bg-white p-4 rounded shadow hover:bg-blue-50">Logs</a></li>
+        </ul>
+    </div>
+</body>
+</html>

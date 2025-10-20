@@ -1,0 +1,28 @@
+{% include 'financeiro/base.html' %}
+{% block content %}
+<div class="container mx-auto mt-8">
+    <h1 class="text-2xl font-bold mb-4">Usuários do Sistema</h1>
+    <table class="w-full bg-white rounded shadow">
+        <thead>
+            <tr class="bg-gray-100">
+                <th class="p-2 text-left">Usuário</th>
+                <th class="p-2 text-left">Email</th>
+                <th class="p-2 text-left">Role</th>
+                <th class="p-2 text-left">Superuser</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for usuario in usuarios %}
+            <tr>
+                <td class="p-2">{{ usuario.username }}</td>
+                <td class="p-2">{{ usuario.email }}</td>
+                <td class="p-2">{{ usuario.role }}</td>
+                <td class="p-2">{% if usuario.is_superuser %}Sim{% else %}Não{% endif %}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="p-2 text-center text-gray-500">Nenhum usuário cadastrado.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
