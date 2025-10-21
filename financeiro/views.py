@@ -103,6 +103,8 @@ def transacoes(request):
 	from datetime import date
 	contas = Conta.objects.filter(usuario=request.user)
 	transacoes = Transacao.objects.filter(usuario=request.user).order_by('-criado_em', '-data')
+	# Sugerir categorias existentes
+	categorias_existentes = Transacao.objects.filter(usuario=request.user).values_list('categoria', flat=True).distinct()
 	errors = []
 	warnings = []
 	success = ''
@@ -117,9 +119,10 @@ def transacoes(request):
 		categoria = request.POST.get('categoria')
 		conta_id = request.POST.get('conta')
 		data_trans = request.POST.get('data')
+		from decimal import Decimal, InvalidOperation
 		try:
-			valor = float(valor)
-		except Exception:
+			valor = Decimal(valor)
+		except (InvalidOperation, TypeError):
 			errors.append('Valor inválido')
 		if tipo not in ['receita', 'despesa']:
 			errors.append('Tipo inválido')
@@ -131,7 +134,7 @@ def transacoes(request):
 			errors.append('Conta inválida')
 			conta = None
 		# Validação de saldo para despesa
-		if tipo == 'despesa' and conta and valor > float(conta.saldo_inicial):
+		if tipo == 'despesa' and conta and valor > conta.saldo_inicial:
 			errors.append('Saldo insuficiente na conta')
 		if not errors and conta:
 			transacao = Transacao.objects.create(
@@ -144,7 +147,7 @@ def transacoes(request):
 				data=data_trans
 			)
 			# Atualizar saldo da conta
-			mult = 1 if tipo == 'receita' else -1
+			mult = Decimal('1') if tipo == 'receita' else Decimal('-1')
 			conta.saldo_inicial += valor * mult
 			conta.save()
 			# Aviso se conta ficou negativa
@@ -159,7 +162,7 @@ def transacoes(request):
 		try:
 			transacao = Transacao.objects.get(id=transacao_id, usuario=request.user)
 			conta = transacao.conta
-			mult = -1 if transacao.tipo == 'receita' else 1
+			mult = Decimal('-1') if transacao.tipo == 'receita' else Decimal('1')
 			conta.saldo_inicial += transacao.valor * mult
 			conta.save()
 			transacao.delete()
@@ -176,6 +179,7 @@ def transacoes(request):
 		'success': success,
 		'today': today,
 		'tipo_pre_selecionado': tipo_pre_selecionado,
+		'categorias_existentes': categorias_existentes,
 	})
 
 @login_required
@@ -193,10 +197,11 @@ def metas(request):
 		valor = request.POST.get('valor')
 		valor_atual = request.POST.get('valor_atual', 0)
 		data_limite = request.POST.get('data_limite')
+		from decimal import Decimal, InvalidOperation
 		try:
-			valor = float(valor)
-			valor_atual = float(valor_atual)
-		except Exception:
+			valor = Decimal(valor)
+			valor_atual = Decimal(valor_atual)
+		except (InvalidOperation, TypeError):
 			errors.append('Valor inválido')
 		if not nome or not valor or not data_limite:
 			errors.append('Preencha todos os campos')
@@ -216,12 +221,16 @@ def metas(request):
 	# Lista de metas com progresso
 	metas = []
 	for meta in metas_objs:
-		progresso = (float(meta.valor_atual) / float(meta.valor)) * 100 if float(meta.valor) > 0 else 0
+		valor = meta.valor
+		valor_atual = meta.valor_atual
+		progresso = (valor_atual / valor) * 100 if valor > 0 else 0
 		progresso = min(progresso, 100)
+		valor_restante = valor - valor_atual
 		metas.append({
 			'nome': meta.nome,
-			'valor': float(meta.valor),
-			'valor_atual': float(meta.valor_atual),
+			'valor': valor,
+			'valor_atual': valor_atual,
+			'valor_restante': valor_restante,
 			'data_limite': meta.data_limite,
 			'progresso': progresso,
 		})
@@ -246,13 +255,15 @@ def usuarios(request):
 		if 'create_user' in request.POST:
 			username = request.POST.get('username', '').strip()
 			password = request.POST.get('password')
-			role = request.POST.get('role')
+			role = request.POST.get('role', 'visitante')
 			if len(username) < 3:
 				errors.append('Username deve ter pelo menos 3 caracteres')
 			if len(password) < 6:
 				errors.append('Senha deve ter pelo menos 6 caracteres')
 			if Usuario.objects.filter(username=username).exists():
 				errors.append('Username já existe')
+			if role not in ['admin', 'gestor', 'visitante']:
+				errors.append('Role inválida')
 			if not errors:
 				user = Usuario.objects.create_user(username=username, password=password, role=role)
 				success = f"Usuário '{username}' criado com sucesso!"
@@ -303,12 +314,13 @@ def relatorios(request):
 		titulo = f"💸 Despesas de {today.strftime('%m/%Y')}"
 		cor = "text-red-400"
 	# Agrupar por categoria
+	from decimal import Decimal
 	por_categoria = {}
 	for t in transacoes:
 		cat = t.categoria
 		if cat not in por_categoria:
-			por_categoria[cat] = {'total': 0, 'count': 0}
-		por_categoria[cat]['total'] += float(t.valor)
+			por_categoria[cat] = {'total': Decimal('0.00'), 'count': 0}
+		por_categoria[cat]['total'] += t.valor
 		por_categoria[cat]['count'] += 1
 	por_categoria = dict(sorted(por_categoria.items(), key=lambda item: item[1]['total'], reverse=True))
 	return render(request, 'financeiro/relatorios.html', {
@@ -364,19 +376,32 @@ def backup(request):
 @login_required
 def extratos(request):
     from .models import Transacao, Conta
-    contas = Conta.objects.filter(usuario=request.user)
-    transacoes = Transacao.objects.filter(usuario=request.user)
-    conta_id = request.GET.get('conta')
-    inicio = request.GET.get('inicio')
-    fim = request.GET.get('fim')
-    if conta_id:
-        transacoes = transacoes.filter(conta_id=conta_id)
-    if inicio:
-        transacoes = transacoes.filter(data__gte=inicio)
-    if fim:
-        transacoes = transacoes.filter(data__lte=fim)
-    transacoes = transacoes.order_by('-data')
-    return render(request, 'financeiro/extratos.html', {'contas': contas, 'transacoes': transacoes})
+	contas = Conta.objects.filter(usuario=request.user)
+	transacoes = Transacao.objects.filter(usuario=request.user)
+	conta_id = request.GET.get('conta')
+	inicio = request.GET.get('inicio')
+	fim = request.GET.get('fim')
+	if conta_id:
+		transacoes = transacoes.filter(conta_id=conta_id)
+	if inicio:
+		transacoes = transacoes.filter(data__gte=inicio)
+	if fim:
+		transacoes = transacoes.filter(data__lte=fim)
+	transacoes = transacoes.order_by('-data', '-criado_em')
+	# Calcular saldo final e inicial para extrato
+	saldo_inicial = contas.get(id=conta_id).saldo_inicial if conta_id and contas.filter(id=conta_id).exists() else None
+	saldo_final = None
+	if saldo_inicial is not None:
+		saldo_final = saldo_inicial
+		for t in transacoes:
+			mult = 1 if t.tipo == 'receita' else -1
+			saldo_final += t.valor * mult
+	return render(request, 'financeiro/extratos.html', {
+		'contas': contas,
+		'transacoes': transacoes,
+		'saldo_inicial': saldo_inicial,
+		'saldo_final': saldo_final,
+	})
 
 @login_required
 def transferencias(request):
